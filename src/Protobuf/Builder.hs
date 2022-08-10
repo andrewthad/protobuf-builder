@@ -17,13 +17,15 @@ module Protobuf.Builder
   , variableWord16
   , variableWord32
   , variableWord64
-  , variableInt32
-  , variableInt64
+  , sint64
+  , int64
+  , sint32
+  , int32
     -- * Fixed Length 32
-  , fixedWord32
+  , fixed32
     -- * Fixed Length 64
-  , fixedWord64
-  , fixedDouble
+  , fixed64
+  , double
     -- * Messages
   , message
   , pair
@@ -77,11 +79,17 @@ data Value
   = Primitive WireType
   | Pairs
 
-variableInt32 ::Int32 -> Builder ('Primitive 'BitsVariable)
-variableInt32 w = variableWord32 (toZigzag32 w)
+sint32 ::Int32 -> Builder ('Primitive 'BitsVariable)
+sint32 w = variableWord32 (toZigzag32 w)
 
-variableInt64 ::Int64 -> Builder ('Primitive 'BitsVariable)
-variableInt64 w = variableWord64 (toZigzag64 w)
+int32 ::Int32 -> Builder ('Primitive 'BitsVariable)
+int32 w = variableWord32 (fromIntegral w)
+
+sint64 ::Int64 -> Builder ('Primitive 'BitsVariable)
+sint64 w = variableWord64 (toZigzag64 w)
+
+int64 ::Int64 -> Builder ('Primitive 'BitsVariable)
+int64 w = variableWord64 (fromIntegral w)
 
 variableWord8 :: Word8 -> Builder ('Primitive 'BitsVariable)
 variableWord8 w = variableWord64 (fromIntegral w)
@@ -97,18 +105,18 @@ variableWord64 w =
   let b = Bounded.run Nat.constant (Bounded.word64LEB128 w)
    in Builder (PM.sizeofByteArray b) (Bytes.fromByteArray b :< Builder.Empty)
 
-fixedWord32 :: Word32 -> Builder ('Primitive 'BitsFixed32)
-fixedWord32 w =
+fixed32 :: Word32 -> Builder ('Primitive 'BitsFixed32)
+fixed32 w =
   let b = Bounded.run Nat.constant (Bounded.word32LE w)
    in Builder (PM.sizeofByteArray b) (Bytes.fromByteArray b :< Builder.Empty)
 
-fixedWord64 :: Word64 -> Builder ('Primitive 'BitsFixed64)
-fixedWord64 w =
+fixed64 :: Word64 -> Builder ('Primitive 'BitsFixed64)
+fixed64 w =
   let b = Bounded.run Nat.constant (Bounded.word64LE w)
    in Builder (PM.sizeofByteArray b) (Bytes.fromByteArray b :< Builder.Empty)
 
-fixedDouble :: Double -> Builder ('Primitive 'BitsFixed64)
-fixedDouble w =
+double :: Double -> Builder ('Primitive 'BitsFixed64)
+double w =
   let b = runByteArrayST $ do
             dst <- PM.newByteArray 8
             PM.writeByteArray dst 0 w
