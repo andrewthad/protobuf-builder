@@ -7,6 +7,13 @@
 {-# language PatternSynonyms #-}
 {-# language GADTs #-}
 
+-- | Encode data with protobuf. Under the hood, this uses catenable byte
+-- sequences, meaning that a large number of small @ByteArray@s are allocated
+-- during encoding. That makes this a simple but low-performance solution.
+-- To prevent incorrect use, @Builder@ is parameterized by @Value@. This
+-- distinguishes encodings of primitives from encodings of sequences of
+-- key-value pairs. The functions 'message' and 'pair' are used to move
+-- between these two domains.
 module Protobuf.Builder
   ( Builder(..)
   , WireType(..)
@@ -57,6 +64,9 @@ import qualified Data.Text.Short as TS
 
 -- | A protobuf object builder. The data constructor is exposed, but it is
 -- unsafe to use it.
+--
+-- Note that @Builder 'Pairs@ has @Semigroup@ and @Monoid@ instances.
+-- This is an important part of the interface.
 data Builder :: Value -> GHC.Type where
   Builder ::
        !Int -- length of builder
